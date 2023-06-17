@@ -1,4 +1,5 @@
 from django.core.management.utils import get_random_secret_key
+from datetime import timedelta
 from os import getenv, path
 from pathlib import Path
 import dotenv
@@ -32,9 +33,21 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    
+    # Used Packages
+    'rest_framework',
+    'djoser',
+    'social_django',
+    'corsheaders',
+
+    # Used Apps
+    'authentication',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'social_django.middleware.SocialAuthExceptionMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -45,6 +58,9 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'backend.urls'
+
+# Custom User model
+AUTH_USER_MODEL = 'authentication.User'
 
 TEMPLATES = [
     {
@@ -120,3 +136,65 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Rest Framework Settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+
+# JWT Settings
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "AUTH_HEADER_TYPES": ("JWT",),
+}
+
+# Email Setup
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = getenv('EMAIL_PORT')
+EMAIL_HOST_USER = getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = getenv('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS = True
+DOMAIN = getenv('FRONTEND_DOMAIN')
+SITE_NAME = getenv('FRONTEND_SITE_NAME')
+
+# Cors Header Sttings
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080",
+    "http://127.0.0.1:8000",
+]
+
+# Djoser Settings
+DJOSER = {
+    'LOGIN_FIELD': 'email',
+    'SEND_ACTIVATION_EMAIL': True,
+    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
+    'PASSWORD_RESET_CONFIRM_URL': 'password-reset-confirm/{uid}/{token}',
+    'ACTIVATION_URL': 'users-activation/{uid}/{token}',
+    'TOKEN_MODEL': None,
+    'SOCIAL_AUTH_ALLOWED_REDIRECT_URIS': [getenv('REDIRECT_URIS')],
+    'SERIALIZERS': {
+        'current_user': 'authentication.serializers.UserSerializer',
+    },
+}
+
+# OAuth Settings
+AUTHENTICATION_BACKENDS = [
+    'social_core.backends.google.GoogleOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# Google OAuth2 Settings
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = getenv('GOOGLE_AUTH_KEY')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = getenv('GOOGLE_AUTH_SECRET_KEY')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'openid'
+]
+SOCIAL_AUTH_GOOGLE_OAUTH2_EXTRA_DATA = ['first_name', 'last_name']
+SOCIAL_AUTH_RAISE_EXCEPTIONS = False
